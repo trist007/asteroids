@@ -4,8 +4,8 @@
 // program main entry point
 int main(void)
 {
-    int screenWidth = 800;
-    int screenHeight = 450;
+    int screenWidth = 1024;
+    int screenHeight = 768;
     
     InitWindow(screenWidth, screenHeight, "asteroids");
     
@@ -24,6 +24,7 @@ int main(void)
     // main game loop
     while(!WindowShouldClose())
     {
+        //-----------------------------------------------------------------------------------------
         // Update
         //-----------------------------------------------------------------------------------------
         if(IsKeyPressed(KEY_H))
@@ -66,8 +67,6 @@ int main(void)
         shipVelocity.y *= friction;
         
         //-----------------------------------------------------------------------------------------
-        
-        
         // Draw
         //-----------------------------------------------------------------------------------------
         BeginDrawing();
@@ -90,7 +89,8 @@ int main(void)
                 shipPosition.y - cosf(shipRotation - 2.4f) * shipSize
             };
             
-            DrawTriangleLines(v1, v2, v3, shipColor);
+            DrawTriangle(v1, v3, v2, shipColor);
+            DrawTriangleLines(v1, v3, v2, BLACK);
             
             
             if(IsCursorHidden()) DrawText("CURSOR HIDDEN", 20, 60, 20, RED);
