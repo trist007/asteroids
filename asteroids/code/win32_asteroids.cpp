@@ -1,4 +1,5 @@
 #include "raylib.h"
+#include <math.h>
 
 // program main entry point
 int main(void)
@@ -8,8 +9,12 @@ int main(void)
     
     InitWindow(screenWidth, screenHeight, "asteroids");
     
+    
+    // Variables
     Vector2 shipPosition = { (float)screenWidth/2, (float)screenHeight/2 };
     Color shipColor = DARKBLUE;
+    float shipRotation = 0.0f;
+    float shipSize = 15.0f;
     
     SetTargetFPS(60);
     
@@ -37,8 +42,8 @@ int main(void)
 */
         
         // control ship with keyboard
-        if(IsKeyDown(KEY_RIGHT)) shipPosition.x += 2.0f;
-        if(IsKeyDown(KEY_LEFT)) shipPosition.x -= 2.0f;
+        if(IsKeyDown(KEY_RIGHT)) shipRotation += 0.05f;
+        if(IsKeyDown(KEY_LEFT)) shipRotation -= 0.05f;
         if(IsKeyDown(KEY_UP)) shipPosition.y -= 2.0f;
         if(IsKeyDown(KEY_DOWN)) shipPosition.y += 2.0f;
         //-----------------------------------------------------------------------------------------
@@ -51,18 +56,23 @@ int main(void)
         {
             ClearBackground(RAYWHITE);
             
-            /*
-            DrawTriangleLines((Vector2){ screenWidth/2.0f, 160.0f },
-                              (Vector2){ screenWidth/2.0f, 230.0f },
-                              (Vector2){ screenWidth/2.0f, 230.0f }, shipColor);
-            */
+            Vector2 v1 = {
+                shipPosition.x + sinf(shipRotation) * shipSize,
+                shipPosition.y - cosf(shipRotation) * shipSize
+            };
             
-            DrawTriangleLines(Vector2{ shipPosition.x, shipPosition.y - 35.0f },
-                              Vector2{ shipPosition.x - 20.0f, shipPosition.y + 35.0f },
-                              Vector2{ shipPosition.x + 20.0f, shipPosition.y + 35.0f }, shipColor);
+            Vector2 v2 = {
+                shipPosition.x + sinf(shipRotation + 2.4f) * shipSize,
+                shipPosition.y - cosf(shipRotation + 2.4f) * shipSize
+            };
             
-            DrawText("Congrats! You created your first window!", 10, 10, 20, DARKGRAY);
-            DrawText("Press 'H' to toggle cursor visibitily", 10, 30, 20, DARKGRAY);
+            Vector2 v3 = {
+                shipPosition.x + sinf(shipRotation - 2.4f) * shipSize,
+                shipPosition.y - cosf(shipRotation - 2.4f) * shipSize
+            };
+            
+            DrawTriangleLines(v1, v2, v3, shipColor);
+            
             
             if(IsCursorHidden()) DrawText("CURSOR HIDDEN", 20, 60, 20, RED);
             else DrawText("CURSOR VISIBLE", 20, 60, 20, LIME);
