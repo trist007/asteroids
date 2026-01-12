@@ -12,6 +12,9 @@ int main(void)
     
     // Variables
     Vector2 shipPosition = { (float)screenWidth/2, (float)screenHeight/2 };
+    Vector2 shipVelocity = { 0.0f, 0.0f };
+    float thrust = 0.1f;
+    float friction = 0.99f; // 1.0 for no friction, lower = more friction
     Color shipColor = DARKBLUE;
     float shipRotation = 0.0f;
     float shipSize = 15.0f;
@@ -44,8 +47,24 @@ int main(void)
         // control ship with keyboard
         if(IsKeyDown(KEY_RIGHT)) shipRotation += 0.05f;
         if(IsKeyDown(KEY_LEFT)) shipRotation -= 0.05f;
-        if(IsKeyDown(KEY_UP)) shipPosition.y -= 2.0f;
-        if(IsKeyDown(KEY_DOWN)) shipPosition.y += 2.0f;
+        if(IsKeyDown(KEY_UP))
+        {
+            shipVelocity.x += sinf(shipRotation) * thrust;
+            shipVelocity.y -= cosf(shipRotation) * thrust;
+        }
+        if(IsKeyDown(KEY_DOWN))
+        {
+            shipVelocity.x -= sinf(shipRotation) * thrust;
+            shipVelocity.y += cosf(shipRotation) * thrust;
+        }
+        
+        // Apply velocity and friction to shipPosition
+        shipPosition.x += shipVelocity.x;
+        shipPosition.y += shipVelocity.y;
+        
+        shipVelocity.x *= friction;
+        shipVelocity.y *= friction;
+        
         //-----------------------------------------------------------------------------------------
         
         
