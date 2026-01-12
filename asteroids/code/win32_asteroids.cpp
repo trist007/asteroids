@@ -8,7 +8,8 @@ int main(void)
     
     InitWindow(screenWidth, screenHeight, "asteroids");
     
-    Vector2 ballPosition = { (float)screenWidth/2, (float)screenHeight/2 };
+    Vector2 shipPosition = { (float)screenWidth/2, (float)screenHeight/2 };
+    Color shipColor = DARKBLUE;
     
     SetTargetFPS(60);
     
@@ -17,11 +18,29 @@ int main(void)
     {
         // Update
         //-----------------------------------------------------------------------------------------
+        if(IsKeyPressed(KEY_H))
+        {
+            if(IsCursorHidden()) ShowCursor();
+            else HideCursor();
+        }
         
-        if(IsKeyDown(KEY_RIGHT)) ballPosition.x += 2.0f;
-        if(IsKeyDown(KEY_LEFT)) ballPosition.x -= 2.0f;
-        if(IsKeyDown(KEY_UP)) ballPosition.y -= 2.0f;
-        if(IsKeyDown(KEY_DOWN)) ballPosition.y += 2.0f;
+        /* control cirlce with the mouse
+        ballPosition = GetMousePosition();
+        
+        if(IsMouseButtonPressed(MOUSE_BUTTON_LEFT)) ballColor = MAROON;
+        else if(IsMouseButtonPressed(MOUSE_BUTTON_MIDDLE)) ballColor = LIME;
+        else if(IsMouseButtonPressed(MOUSE_BUTTON_RIGHT)) ballColor = DARKBLUE;
+        else if(IsMouseButtonPressed(MOUSE_BUTTON_SIDE)) ballColor = PURPLE;
+        else if(IsMouseButtonPressed(MOUSE_BUTTON_EXTRA)) ballColor = YELLOW;
+        else if(IsMouseButtonPressed(MOUSE_BUTTON_FORWARD)) ballColor = ORANGE;
+        else if(IsMouseButtonPressed(MOUSE_BUTTON_BACK)) ballColor = BEIGE;
+*/
+        
+        // control ship with keyboard
+        if(IsKeyDown(KEY_RIGHT)) shipPosition.x += 2.0f;
+        if(IsKeyDown(KEY_LEFT)) shipPosition.x -= 2.0f;
+        if(IsKeyDown(KEY_UP)) shipPosition.y -= 2.0f;
+        if(IsKeyDown(KEY_DOWN)) shipPosition.y += 2.0f;
         //-----------------------------------------------------------------------------------------
         
         
@@ -32,9 +51,22 @@ int main(void)
         {
             ClearBackground(RAYWHITE);
             
-            DrawText("Congrats! You created your first window!", 190, 200, 20, LIGHTGRAY);
+            /*
+            DrawTriangleLines((Vector2){ screenWidth/2.0f, 160.0f },
+                              (Vector2){ screenWidth/2.0f, 230.0f },
+                              (Vector2){ screenWidth/2.0f, 230.0f }, shipColor);
+            */
             
-            DrawCircleV(ballPosition, 50, MAROON);
+            DrawTriangleLines(Vector2{ shipPosition.x, shipPosition.y - 35.0f },
+                              Vector2{ shipPosition.x - 20.0f, shipPosition.y + 35.0f },
+                              Vector2{ shipPosition.x + 20.0f, shipPosition.y + 35.0f }, shipColor);
+            
+            DrawText("Congrats! You created your first window!", 10, 10, 20, DARKGRAY);
+            DrawText("Press 'H' to toggle cursor visibitily", 10, 30, 20, DARKGRAY);
+            
+            if(IsCursorHidden()) DrawText("CURSOR HIDDEN", 20, 60, 20, RED);
+            else DrawText("CURSOR VISIBLE", 20, 60, 20, LIME);
+            
         }
         
         EndDrawing();
