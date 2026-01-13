@@ -1,5 +1,5 @@
 #include "raylib.h"
-#include <math.h>
+#include "raymath.h"
 
 #define MAX_BULLETS 20
 
