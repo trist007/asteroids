@@ -24,6 +24,17 @@ int main(void)
     float shipRotation = 0.0f;
     float shipSize = 15.0f;
     
+    // Getting radius of screen windows for asteroid spawn
+    float screenRadius = sqrtf((screenWidth * screenWidth) + (screenHeight * screenHeight)) / 2;
+    
+    // Asteroid
+    Vector2 asteroidPos = {};
+    Vector2 asteroidVelocity = {};
+    float angle = GetRandomValue(0, 360) * DEG2RAD;
+    float asteroidSpeed = 2.0f;
+    Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
+    bool asteroidSpawned = false;
+    
     // Bullets
     Vector2 bulletPosition[MAX_BULLETS];
     Vector2 bulletVelocity[MAX_BULLETS];
@@ -87,6 +98,10 @@ int main(void)
         shipVelocity.x *= friction;
         shipVelocity.y *= friction;
         
+        // Apply velocity to asteroid
+        asteroidPos.x += asteroidVelocity.x;
+        asteroidPos.y += asteroidVelocity.y;
+        
         // Update existing bullets
         for(int i = 0;
             i < MAX_BULLETS;
@@ -131,6 +146,25 @@ int main(void)
             
             DrawTriangle(v1, v3, v2, shipColor);
             DrawTriangleLines(v1, v3, v2, BLACK);
+            
+            // Draw asteroids
+            Vector2 asteroidSpawnPos = {
+                screenWidth / 4.0f + cosf(angle) * screenRadius,
+                screenHeight / 4.0f + sinf(angle) * screenRadius
+            };
+            
+            if(!asteroidSpawned) 
+            {
+                DrawCircleV(asteroidSpawnPos, 90.0f, GRAY);
+                asteroidSpawned = true;
+                asteroidPos = asteroidSpawnPos;
+                
+                // Setting velocity
+                Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
+                Vector2 asteroidDirection = Vector2Normalize(Vector2Subtract(asteroidTarget, asteroidPos));
+                asteroidVelocity = Vector2Scale(asteroidDirection, asteroidSpeed);
+            }
+            DrawCircleV(asteroidPos, 90.0f, GRAY);
             
             // Draw bullets
             for(int i = 0;
