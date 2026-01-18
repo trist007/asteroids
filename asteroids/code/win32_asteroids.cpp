@@ -174,6 +174,18 @@ int main(void)
                 if(bulletActive[i])
                 {
                     DrawCircleV(bulletPosition[i], 3.0f, RED);
+                    
+                    // Collision detection
+                    float distance = Vector2Distance(bulletPosition[i], asteroidPos);
+                    float asteroidRadius = 90.0f;
+                    float bulletRadius = 3.0f;
+                    
+                    if(distance < (asteroidRadius + bulletRadius))
+                    {
+                        bulletActive[i] = false;
+                        asteroidSpawned = false;
+                    }
+                    
                 }
             }
             
