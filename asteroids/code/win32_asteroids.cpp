@@ -2,6 +2,7 @@
 #include "raymath.h"
 
 #define MAX_BULLETS 20
+#define MAX_ASTEROIDS 8
 
 // Program main entry point
 int main(void)
@@ -28,17 +29,19 @@ int main(void)
     float screenRadius = sqrtf((screenWidth * screenWidth) + (screenHeight * screenHeight)) / 2;
     
     // Asteroid
-    Vector2 asteroidPos = {};
-    Vector2 asteroidVelocity = {};
+    Vector2 asteroidPos[MAX_ASTEROIDS];
+    Vector2 asteroidVelocity[MAX_ASTEROIDS];
+    Vector2 asteroidDirection[MAX_ASTEROIDS];
+    float asteroidScale[MAX_ASTEROIDS];
+    bool asteroidSpawned[MAX_ASTEROIDS];
     float asteroidSpeed = 2.0f;
     Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
-    bool asteroidSpawned = false;
-    float scale = 0.0f;
     
     // Bullets
     Vector2 bulletPosition[MAX_BULLETS];
     Vector2 bulletVelocity[MAX_BULLETS];
     bool bulletActive[MAX_BULLETS];
+    float bulletRadius = 3.0f;
     float bulletSpeed = 10.0f;
     
     // Initialize bullets
@@ -47,6 +50,14 @@ int main(void)
         i++)
     {
         bulletActive[i] = false;
+    }
+    
+    // Initialize asteroids
+    for(int i = 0;
+        i < MAX_ASTEROIDS;
+        i++)
+    {
+        asteroidSpawned[i] = false;
     }
     
     // Main game loop
@@ -98,14 +109,7 @@ int main(void)
         shipVelocity.x *= friction;
         shipVelocity.y *= friction;
         
-        // Get random angle and scale for asteroid
-        float angle = GetRandomValue(0, 360) * DEG2RAD;
-        
-        // Apply velocity to asteroid
-        asteroidPos.x += asteroidVelocity.x;
-        asteroidPos.y += asteroidVelocity.y;
-        
-        // Update existing bullets
+        // Update active bullets
         for(int i = 0;
             i < MAX_BULLETS;
             i++)
@@ -120,6 +124,71 @@ int main(void)
                    bulletPosition[i].y < 0 || bulletPosition[i].y > screenHeight)
                 {
                     bulletActive[i] = false;
+                }
+            }
+        }
+        
+        // Spawn asteroids
+        for(int i = 0;
+            i < MAX_ASTEROIDS;
+            i++)
+        {
+            if(!asteroidSpawned[i])
+            {
+                // Get random angle and scale for asteroid
+                float angle = GetRandomValue(0, 360) * DEG2RAD;
+                float spawnRadius = screenRadius + 50.0f;
+                
+                asteroidPos[i].x = screenWidth / 2.0f + cosf(angle) * spawnRadius;
+                asteroidPos[i].y = screenWidth / 2.0f + sinf(angle) * spawnRadius;
+                
+                asteroidScale[i] = GetRandomValue(10.0f, 80.0f);
+                asteroidSpawned[i] = true;
+                asteroidDirection[i] = Vector2Normalize(Vector2Subtract(asteroidTarget, asteroidPos[i]));
+                asteroidVelocity[i] = Vector2Scale(asteroidDirection[i], asteroidSpeed);
+            }
+        }
+        
+        
+        // Update spawned asteroids
+        for(int i = 0;
+            i < MAX_ASTEROIDS;
+            i++)
+        {
+            if(asteroidSpawned[i])
+            {
+                asteroidPos[i].x += asteroidVelocity[i].x;
+                asteroidPos[i].y += asteroidVelocity[i].y;
+                
+                if(asteroidPos[i].x < 0 || asteroidPos[i].x > screenWidth ||
+                   asteroidPos[i].y < 0 || asteroidPos[i].y > screenHeight)
+                {
+                    asteroidSpawned[i] = false;
+                }
+            }
+        }
+        
+        // Check for collisions
+        for(int i = 0;
+            i < MAX_BULLETS;
+            i++)
+        {
+            if(bulletActive[i])
+            {
+                for(int j = 0;
+                    j< MAX_ASTEROIDS;
+                    j++)
+                {
+                    if(asteroidSpawned[j])
+                    {
+                        float distance = Vector2Distance(bulletPosition[i], asteroidPos[j]);
+                        
+                        if(distance < (asteroidScale[j] + bulletRadius))
+                        {
+                            bulletActive[i] = false;
+                            asteroidSpawned[j] = false;
+                        }
+                    }
                 }
             }
         }
@@ -150,27 +219,6 @@ int main(void)
             DrawTriangle(v1, v3, v2, shipColor);
             DrawTriangleLines(v1, v3, v2, BLACK);
             
-            // Draw asteroids
-            Vector2 asteroidSpawnPos = {
-                screenWidth / 4.0f + cosf(angle) * screenRadius,
-                screenHeight / 4.0f + sinf(angle) * screenRadius
-            };
-            
-            if(!asteroidSpawned) 
-            {
-                scale = GetRandomValue(10.0f, 120.0f);
-                DrawCircleV(asteroidSpawnPos, scale, GRAY);
-                asteroidSpawned = true;
-                asteroidPos = asteroidSpawnPos;
-                
-                // Setting velocity
-                Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
-                Vector2 asteroidDirection = Vector2Normalize(Vector2Subtract(asteroidTarget, asteroidPos));
-                asteroidVelocity = Vector2Scale(asteroidDirection, asteroidSpeed);
-            }
-            
-            DrawCircleV(asteroidPos, scale, GRAY);
-            
             // Draw bullets
             for(int i = 0;
                 i < MAX_BULLETS;
@@ -179,18 +227,17 @@ int main(void)
                 if(bulletActive[i])
                 {
                     DrawCircleV(bulletPosition[i], 3.0f, RED);
-                    
-                    // Collision detection
-                    float distance = Vector2Distance(bulletPosition[i], asteroidPos);
-                    float asteroidRadius = scale;
-                    float bulletRadius = 3.0f;
-                    
-                    if(distance < (asteroidRadius + bulletRadius))
-                    {
-                        bulletActive[i] = false;
-                        asteroidSpawned = false;
-                    }
-                    
+                }
+            }
+            
+            // Draw asteroids
+            for(int i = 0;
+                i < MAX_ASTEROIDS;
+                i++)
+            {
+                if(asteroidSpawned[i])
+                {
+                    DrawCircleV(asteroidPos[i], asteroidScale[i], GRAY);
                 }
             }
             
