@@ -30,7 +30,6 @@ int main(void)
     // Asteroid
     Vector2 asteroidPos = {};
     Vector2 asteroidVelocity = {};
-    float angle = GetRandomValue(0, 360) * DEG2RAD;
     float asteroidSpeed = 2.0f;
     Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
     bool asteroidSpawned = false;
@@ -97,6 +96,9 @@ int main(void)
         
         shipVelocity.x *= friction;
         shipVelocity.y *= friction;
+        
+        // get random angle for asteroid
+        float angle = GetRandomValue(0, 360) * DEG2RAD;
         
         // Apply velocity to asteroid
         asteroidPos.x += asteroidVelocity.x;
