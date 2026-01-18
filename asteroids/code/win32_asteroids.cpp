@@ -3,7 +3,7 @@
 
 #define MAX_BULLETS 20
 
-// program main entry point
+// Program main entry point
 int main(void)
 {
     int screenWidth = 1024;
@@ -49,7 +49,7 @@ int main(void)
         bulletActive[i] = false;
     }
     
-    // main game loop
+    // Main game loop
     while(!WindowShouldClose())
     {
         //-----------------------------------------------------------------------------------------
@@ -61,7 +61,7 @@ int main(void)
             else HideCursor();
         }
         
-        // control ship with keyboard
+        // Control ship with keyboard
         if(IsKeyDown(KEY_RIGHT)) shipRotation += 0.05f;
         if(IsKeyDown(KEY_LEFT)) shipRotation -= 0.05f;
         if(IsKeyDown(KEY_UP))
@@ -98,7 +98,7 @@ int main(void)
         shipVelocity.x *= friction;
         shipVelocity.y *= friction;
         
-        // get random angle and scale for asteroid
+        // Get random angle and scale for asteroid
         float angle = GetRandomValue(0, 360) * DEG2RAD;
         
         // Apply velocity to asteroid
@@ -168,6 +168,7 @@ int main(void)
                 Vector2 asteroidDirection = Vector2Normalize(Vector2Subtract(asteroidTarget, asteroidPos));
                 asteroidVelocity = Vector2Scale(asteroidDirection, asteroidSpeed);
             }
+            
             DrawCircleV(asteroidPos, scale, GRAY);
             
             // Draw bullets
@@ -181,7 +182,7 @@ int main(void)
                     
                     // Collision detection
                     float distance = Vector2Distance(bulletPosition[i], asteroidPos);
-                    float asteroidRadius = 90.0f;
+                    float asteroidRadius = scale;
                     float bulletRadius = 3.0f;
                     
                     if(distance < (asteroidRadius + bulletRadius))
@@ -192,7 +193,6 @@ int main(void)
                     
                 }
             }
-            
             
             if(IsCursorHidden()) DrawText("CURSOR HIDDEN", 20, 60, 20, RED);
             else DrawText("CURSOR VISIBLE", 20, 60, 20, LIME);
