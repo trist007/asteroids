@@ -33,6 +33,7 @@ int main(void)
     float asteroidSpeed = 2.0f;
     Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
     bool asteroidSpawned = false;
+    float scale = 0.0f;
     
     // Bullets
     Vector2 bulletPosition[MAX_BULLETS];
@@ -97,7 +98,7 @@ int main(void)
         shipVelocity.x *= friction;
         shipVelocity.y *= friction;
         
-        // get random angle for asteroid
+        // get random angle and scale for asteroid
         float angle = GetRandomValue(0, 360) * DEG2RAD;
         
         // Apply velocity to asteroid
@@ -157,7 +158,8 @@ int main(void)
             
             if(!asteroidSpawned) 
             {
-                DrawCircleV(asteroidSpawnPos, 90.0f, GRAY);
+                scale = GetRandomValue(10.0f, 120.0f);
+                DrawCircleV(asteroidSpawnPos, scale, GRAY);
                 asteroidSpawned = true;
                 asteroidPos = asteroidSpawnPos;
                 
@@ -166,7 +168,7 @@ int main(void)
                 Vector2 asteroidDirection = Vector2Normalize(Vector2Subtract(asteroidTarget, asteroidPos));
                 asteroidVelocity = Vector2Scale(asteroidDirection, asteroidSpeed);
             }
-            DrawCircleV(asteroidPos, 90.0f, GRAY);
+            DrawCircleV(asteroidPos, scale, GRAY);
             
             // Draw bullets
             for(int i = 0;
