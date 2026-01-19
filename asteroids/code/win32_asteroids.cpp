@@ -34,6 +34,7 @@ int main(void)
     Color shipColor = DARKBLUE;
     float shipRotation = 0.0f;
     float shipSize = 15.0f;
+    bool crossedOver = false;
     
     // Getting radius of screen windows for asteroid spawn
     float screenRadius = sqrtf((screenWidth * screenWidth) + (screenHeight * screenHeight)) / 2;
@@ -240,6 +241,21 @@ int main(void)
                         }
                     }
                 }
+            }
+            
+            // Check if player ship has gone offscreen only to wrap on the opposite end
+            // NOTE(trist007): if the ship moves very fast it can do multiple
+            // wraps so you can use the crossedOver bool
+            if(shipPosition.x < 0 || shipPosition.x > screenWidth ||
+               shipPosition.y < 0 || shipPosition.y > screenHeight)
+            {
+                // Wrap horizontally
+                if(shipPosition.x < 0) shipPosition.x = screenWidth;
+                if(shipPosition.x > screenWidth) shipPosition.x = 0;
+                
+                // Wrap veritcally
+                if(shipPosition.y < 0) shipPosition.y = screenHeight;
+                if(shipPosition.y > screenHeight) shipPosition.y = 0;
             }
         }
         
