@@ -3,13 +3,35 @@
 
 #define MAX_BULLETS 20
 #define MAX_ASTEROIDS 8
+#define MAX_SMALL_ASTEROIDS 12
+
+int screenWidth = 1024;
+int screenHeight = 768;
+
+// Getting radius of screen windows for asteroid spawn
+float screenRadius = sqrtf((screenWidth * screenWidth) + (screenHeight * screenHeight)) / 2;
+
+float spawnMargin = 50.0f;
+
+float asteroidSpeed = 2.0f;
+Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
+
+float asteroidSpeedMultiplier = 1.0f;
+
+void spawnSmallAsteroid(Vector2 asteroidPos, Vector2 asteroidVelocity, Vector2 asteroidDirection);
+
+// Small asteroid
+Vector2 smallAsteroidPos[MAX_SMALL_ASTEROIDS];
+Vector2 smallAsteroidVelocity[MAX_SMALL_ASTEROIDS];
+Vector2 smallAsteroidDirection[MAX_SMALL_ASTEROIDS];
+int smallAsteroidScale[MAX_SMALL_ASTEROIDS];
+bool smallAsteroidSpawned[MAX_SMALL_ASTEROIDS];
+float smallAsteroidSpeed = 2.0f;
+Vector2 smallAsteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
 
 // Program main entry point
 int main(void)
 {
-    int screenWidth = 1024;
-    int screenHeight = 768;
-    
     InitWindow(screenWidth, screenHeight, "asteroids");
     
     SetTargetFPS(60);
@@ -21,7 +43,6 @@ int main(void)
     // Timer
     float gameTimer = 0.0f;
     float speedIncreaseInterval = 10.0f;
-    float asteroidSpeedMultiplier = 1.0f;
     
     float asteroidSpawnTimer = 0.0f;
     float asteroidSpawnInterval = 1.0f;
@@ -36,19 +57,14 @@ int main(void)
     float shipSize = 15.0f;
     bool crossedOver = false;
     
-    // Getting radius of screen windows for asteroid spawn
-    float screenRadius = sqrtf((screenWidth * screenWidth) + (screenHeight * screenHeight)) / 2;
-    
     // Asteroid
     Vector2 asteroidPos[MAX_ASTEROIDS];
     Vector2 asteroidVelocity[MAX_ASTEROIDS];
     Vector2 asteroidDirection[MAX_ASTEROIDS];
     int asteroidScale[MAX_ASTEROIDS];
     bool asteroidSpawned[MAX_ASTEROIDS];
-    float asteroidSpeed = 2.0f;
-    Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
     
-    // Bullets
+    // Bullet
     Vector2 bulletPosition[MAX_BULLETS];
     Vector2 bulletVelocity[MAX_BULLETS];
     bool bulletActive[MAX_BULLETS];
@@ -69,6 +85,14 @@ int main(void)
         i++)
     {
         asteroidSpawned[i] = false;
+    }
+    
+    // Initialize small asteroids
+    for(int i = 0;
+        i < MAX_SMALL_ASTEROIDS;
+        i++)
+    {
+        smallAsteroidSpawned[i] = false;
     }
     
     // Main game loop
@@ -153,7 +177,6 @@ int main(void)
             
             if(asteroidSpawnTimer >= asteroidSpawnInterval)
             {
-                
                 // Spawn asteroids
                 for(int i = 0;
                     i < MAX_ASTEROIDS;
@@ -163,12 +186,12 @@ int main(void)
                     {
                         // Get random angle and scale for asteroid
                         float angle = GetRandomValue(0, 360) * DEG2RAD;
-                        float spawnRadius = screenRadius + 50.0f;
+                        float spawnRadius = screenRadius + spawnMargin;
                         
                         asteroidPos[i].x = screenWidth / 2.0f + cosf(angle) * spawnRadius;
                         asteroidPos[i].y = screenHeight / 2.0f + sinf(angle) * spawnRadius;
                         
-                        asteroidScale[i] = GetRandomValue(10, 80);
+                        asteroidScale[i] = GetRandomValue(20, 80);
                         asteroidSpawned[i] = true;
                         asteroidDirection[i] = Vector2Normalize(Vector2Subtract(asteroidTarget, asteroidPos[i]));
                         asteroidVelocity[i] = Vector2Scale(asteroidDirection[i], asteroidSpeed * asteroidSpeedMultiplier);
@@ -190,6 +213,7 @@ int main(void)
                     asteroidPos[i].x += asteroidVelocity[i].x;
                     asteroidPos[i].y += asteroidVelocity[i].y;
                     
+                    // if asteroid goes off screen then de-spawn
                     float margin = 200.0f;
                     if(asteroidPos[i].x < -margin || asteroidPos[i].x > screenWidth + margin ||
                        asteroidPos[i].y < -margin || asteroidPos[i].y > screenHeight + margin)
@@ -197,6 +221,26 @@ int main(void)
                         asteroidSpawned[i] = false;
                     }
                 }
+            }
+            
+            // Update spawned small asteroids
+            for(int i = 0;
+                i < MAX_SMALL_ASTEROIDS;
+                i++)
+            {
+                if(smallAsteroidSpawned[i])
+                {
+                    smallAsteroidPos[i].x += smallAsteroidVelocity[i].x;
+                    smallAsteroidPos[i].y += smallAsteroidVelocity[i].y;
+                    
+                    // if asteroid goes off screen then de-spawn
+                    float margin = 175.00;
+                    if(smallAsteroidPos[i].x < -margin || smallAsteroidPos[i].x > screenWidth + margin ||
+                       smallAsteroidPos[i].y < -margin || smallAsteroidPos[i].y > screenHeight + margin)
+                    {
+                        smallAsteroidSpawned[i] = false;
+                    }
+                } 
             }
             
             // Check for bullet asteroid collisions
@@ -207,7 +251,7 @@ int main(void)
                 if(bulletActive[i])
                 {
                     for(int j = 0;
-                        j< MAX_ASTEROIDS;
+                        j < MAX_ASTEROIDS;
                         j++)
                     {
                         if(asteroidSpawned[j])
@@ -218,6 +262,25 @@ int main(void)
                             {
                                 bulletActive[i] = false;
                                 asteroidSpawned[j] = false;
+                                
+                                // Spawn 2 small asteroids
+                                spawnSmallAsteroid(asteroidPos[j], asteroidVelocity[j], asteroidDirection[j]);
+                                spawnSmallAsteroid(asteroidPos[j], asteroidVelocity[j], asteroidDirection[j]);
+                            }
+                        }
+                    }
+                    for(int k = 0;
+                        k < MAX_SMALL_ASTEROIDS;
+                        k++)
+                    {
+                        if(smallAsteroidSpawned[k])
+                        {
+                            float distance = Vector2Distance(bulletPosition[i], smallAsteroidPos[k]);
+                            
+                            if(distance < (smallAsteroidScale[k] + bulletRadius))
+                            {
+                                bulletActive[i] = false;
+                                smallAsteroidSpawned[k] = false;
                             }
                         }
                     }
@@ -235,6 +298,20 @@ int main(void)
                     {
                         float distance = Vector2Distance(asteroidPos[i], shipPosition);
                         if(distance < (asteroidScale[i] + shipSize))
+                        {
+                            gameOver = true;
+                            break;
+                        }
+                    }
+                }
+                for(int j = 0;
+                    j < MAX_SMALL_ASTEROIDS;
+                    j++)
+                {
+                    if(smallAsteroidSpawned[j])
+                    {
+                        float distance = Vector2Distance(smallAsteroidPos[j], shipPosition);
+                        if(distance < (smallAsteroidScale[j] + shipSize))
                         {
                             gameOver = true;
                             break;
@@ -307,6 +384,17 @@ int main(void)
                 }
             }
             
+            // Draw small asteroids
+            for(int i = 0;
+                i < MAX_SMALL_ASTEROIDS;
+                i++)
+            {
+                if(smallAsteroidSpawned[i])
+                {
+                    DrawCircleV(smallAsteroidPos[i], smallAsteroidScale[i], GRAY);
+                }
+            }
+            
             if(IsCursorHidden()) DrawText("CURSOR HIDDEN", 20, 60, 20, RED);
             else DrawText("CURSOR VISIBLE", 20, 60, 20, LIME);
             
@@ -328,4 +416,36 @@ int main(void)
     CloseWindow();
     
     return(0);
+}
+
+void
+spawnSmallAsteroid(Vector2 asteroidPos, Vector2 asteroidVelocity, Vector2 asteroidDirection)
+{
+    for(int i = 0;
+        i < MAX_SMALL_ASTEROIDS;
+        i++)
+    {
+        if(!smallAsteroidSpawned[i])
+        {
+            float angle = GetRandomValue(0, 360);
+            float spawnRadius = screenRadius + spawnMargin;
+            
+            smallAsteroidPos[i].x = asteroidPos.x;
+            smallAsteroidPos[i].y = asteroidPos.y;
+            
+            smallAsteroidScale[i] = GetRandomValue(5, 10);
+            smallAsteroidSpawned[i] = true;
+            
+            // Add some spread
+            float spread = GetRandomValue(-40, 40) * DEG2RAD;
+            
+            smallAsteroidDirection[i].x = asteroidDirection.x * cosf(spread) - asteroidDirection.y * sinf(spread);
+            smallAsteroidDirection[i].x = asteroidDirection.y * sinf(spread) + asteroidDirection.y * cosf(spread);
+            
+            smallAsteroidVelocity[i] = Vector2Scale(smallAsteroidDirection[i], asteroidSpeed);
+            
+            // Only spawn one small asteroid
+            break;
+        }
+    }
 }
