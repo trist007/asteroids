@@ -2,7 +2,7 @@
 #include "raymath.h"
 
 #define MAX_BULLETS 20
-#define MAX_ASTEROIDS 8
+#define MAX_LARGE_ASTEROIDS 8
 #define MAX_SMALL_ASTEROIDS 12
 
 int screenWidth = 1024;
@@ -11,23 +11,29 @@ int screenHeight = 768;
 // Getting radius of screen windows for asteroid spawn
 float screenRadius = sqrtf((screenWidth * screenWidth) + (screenHeight * screenHeight)) / 2;
 
+// Spawn margin so asteroid will not spawn within the screen
 float spawnMargin = 50.0f;
 
+// Asteroid attributes
 float asteroidSpeed = 2.0f;
 Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
 
+// Implement difficulty where every 10 seconds 0.2f gets added
 float asteroidSpeedMultiplier = 1.0f;
 
 void spawnSmallAsteroid(Vector2 asteroidPos, Vector2 asteroidVelocity, Vector2 asteroidDirection);
 
-// Small asteroid
-Vector2 smallAsteroidPos[MAX_SMALL_ASTEROIDS];
-Vector2 smallAsteroidVelocity[MAX_SMALL_ASTEROIDS];
-Vector2 smallAsteroidDirection[MAX_SMALL_ASTEROIDS];
-int smallAsteroidScale[MAX_SMALL_ASTEROIDS];
-bool smallAsteroidSpawned[MAX_SMALL_ASTEROIDS];
-float smallAsteroidSpeed = 2.0f;
-Vector2 smallAsteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
+typedef struct
+{
+    Vector2 pos;
+    Vector2 velocity;
+    Vector2 direction;
+    int size;
+    bool active;
+} Asteroid;
+
+Asteroid largeAsteroid[MAX_LARGE_ASTEROIDS];
+Asteroid smallAsteroid[MAX_SMALL_ASTEROIDS];
 
 // Program main entry point
 int main(void)
@@ -55,14 +61,6 @@ int main(void)
     Color shipColor = DARKBLUE;
     float shipRotation = 0.0f;
     float shipSize = 15.0f;
-    bool crossedOver = false;
-    
-    // Asteroid
-    Vector2 asteroidPos[MAX_ASTEROIDS];
-    Vector2 asteroidVelocity[MAX_ASTEROIDS];
-    Vector2 asteroidDirection[MAX_ASTEROIDS];
-    int asteroidScale[MAX_ASTEROIDS];
-    bool asteroidSpawned[MAX_ASTEROIDS];
     
     // Bullet
     Vector2 bulletPosition[MAX_BULLETS];
@@ -81,10 +79,10 @@ int main(void)
     
     // Initialize asteroids
     for(int i = 0;
-        i < MAX_ASTEROIDS;
+        i < MAX_LARGE_ASTEROIDS;
         i++)
     {
-        asteroidSpawned[i] = false;
+        largeAsteroid[i].active = false;
     }
     
     // Initialize small asteroids
@@ -92,7 +90,7 @@ int main(void)
         i < MAX_SMALL_ASTEROIDS;
         i++)
     {
-        smallAsteroidSpawned[i] = false;
+        smallAsteroid[i].active = false;
     }
     
     // Main game loop
@@ -179,22 +177,22 @@ int main(void)
             {
                 // Spawn asteroids
                 for(int i = 0;
-                    i < MAX_ASTEROIDS;
+                    i < MAX_LARGE_ASTEROIDS;
                     i++)
                 {
-                    if(!asteroidSpawned[i])
+                    if(!largeAsteroid[i].active)
                     {
                         // Get random angle and scale for asteroid
                         float angle = GetRandomValue(0, 360) * DEG2RAD;
                         float spawnRadius = screenRadius + spawnMargin;
                         
-                        asteroidPos[i].x = screenWidth / 2.0f + cosf(angle) * spawnRadius;
-                        asteroidPos[i].y = screenHeight / 2.0f + sinf(angle) * spawnRadius;
+                        largeAsteroid[i].pos.x = screenWidth / 2.0f + cosf(angle) * spawnRadius;
+                        largeAsteroid[i].pos.y = screenHeight / 2.0f + sinf(angle) * spawnRadius;
                         
-                        asteroidScale[i] = GetRandomValue(20, 80);
-                        asteroidSpawned[i] = true;
-                        asteroidDirection[i] = Vector2Normalize(Vector2Subtract(asteroidTarget, asteroidPos[i]));
-                        asteroidVelocity[i] = Vector2Scale(asteroidDirection[i], asteroidSpeed * asteroidSpeedMultiplier);
+                        largeAsteroid[i].size = GetRandomValue(20, 80);
+                        largeAsteroid[i].active = true;
+                        largeAsteroid[i].direction = Vector2Normalize(Vector2Subtract(asteroidTarget, largeAsteroid[i].pos));
+                        largeAsteroid[i].velocity = Vector2Scale(largeAsteroid[i].direction, asteroidSpeed * asteroidSpeedMultiplier);
                         
                         // Only spawn one asteroid per interval
                         asteroidSpawnTimer = 0.0f;
@@ -205,20 +203,20 @@ int main(void)
             
             // Update spawned asteroids
             for(int i = 0;
-                i < MAX_ASTEROIDS;
+                i < MAX_LARGE_ASTEROIDS;
                 i++)
             {
-                if(asteroidSpawned[i])
+                if(largeAsteroid[i].active)
                 {
-                    asteroidPos[i].x += asteroidVelocity[i].x;
-                    asteroidPos[i].y += asteroidVelocity[i].y;
+                    largeAsteroid[i].pos.x += largeAsteroid[i].velocity.x;
+                    largeAsteroid[i].pos.y += largeAsteroid[i].velocity.y;
                     
                     // if asteroid goes off screen then de-spawn
                     float margin = 200.0f;
-                    if(asteroidPos[i].x < -margin || asteroidPos[i].x > screenWidth + margin ||
-                       asteroidPos[i].y < -margin || asteroidPos[i].y > screenHeight + margin)
+                    if(largeAsteroid[i].pos.x < -margin || largeAsteroid[i].pos.x > screenWidth + margin ||
+                       largeAsteroid[i].pos.y < -margin || largeAsteroid[i].pos.y > screenHeight + margin)
                     {
-                        asteroidSpawned[i] = false;
+                        largeAsteroid[i].active = false;
                     }
                 }
             }
@@ -228,17 +226,17 @@ int main(void)
                 i < MAX_SMALL_ASTEROIDS;
                 i++)
             {
-                if(smallAsteroidSpawned[i])
+                if(smallAsteroid[i].active)
                 {
-                    smallAsteroidPos[i].x += smallAsteroidVelocity[i].x;
-                    smallAsteroidPos[i].y += smallAsteroidVelocity[i].y;
+                    smallAsteroid[i].pos.x += smallAsteroid[i].velocity.x;
+                    smallAsteroid[i].pos.y += smallAsteroid[i].velocity.y;
                     
                     // if asteroid goes off screen then de-spawn
                     float margin = 175.00;
-                    if(smallAsteroidPos[i].x < -margin || smallAsteroidPos[i].x > screenWidth + margin ||
-                       smallAsteroidPos[i].y < -margin || smallAsteroidPos[i].y > screenHeight + margin)
+                    if(smallAsteroid[i].pos.x < -margin || smallAsteroid[i].pos.x > screenWidth + margin ||
+                       smallAsteroid[i].pos.y < -margin || smallAsteroid[i].pos.y > screenHeight + margin)
                     {
-                        smallAsteroidSpawned[i] = false;
+                        smallAsteroid[i].active = false;
                     }
                 } 
             }
@@ -251,21 +249,21 @@ int main(void)
                 if(bulletActive[i])
                 {
                     for(int j = 0;
-                        j < MAX_ASTEROIDS;
+                        j < MAX_LARGE_ASTEROIDS;
                         j++)
                     {
-                        if(asteroidSpawned[j])
+                        if(largeAsteroid[j].active)
                         {
-                            float distance = Vector2Distance(bulletPosition[i], asteroidPos[j]);
+                            float distance = Vector2Distance(bulletPosition[i], largeAsteroid[j].pos);
                             
-                            if(distance < (asteroidScale[j] + bulletRadius))
+                            if(distance < (largeAsteroid[j].size + bulletRadius))
                             {
                                 bulletActive[i] = false;
-                                asteroidSpawned[j] = false;
+                                largeAsteroid[j].active = false;
                                 
                                 // Spawn 2 small asteroids
-                                spawnSmallAsteroid(asteroidPos[j], asteroidVelocity[j], asteroidDirection[j]);
-                                spawnSmallAsteroid(asteroidPos[j], asteroidVelocity[j], asteroidDirection[j]);
+                                spawnSmallAsteroid(largeAsteroid[j].pos, largeAsteroid[j].velocity, largeAsteroid[j].direction);
+                                spawnSmallAsteroid(largeAsteroid[j].pos, largeAsteroid[j].velocity, largeAsteroid[j].direction);
                             }
                         }
                     }
@@ -273,14 +271,14 @@ int main(void)
                         k < MAX_SMALL_ASTEROIDS;
                         k++)
                     {
-                        if(smallAsteroidSpawned[k])
+                        if(smallAsteroid[k].active)
                         {
-                            float distance = Vector2Distance(bulletPosition[i], smallAsteroidPos[k]);
+                            float distance = Vector2Distance(bulletPosition[i], smallAsteroid[k].pos);
                             
-                            if(distance < (smallAsteroidScale[k] + bulletRadius))
+                            if(distance < (smallAsteroid[k].size + bulletRadius))
                             {
                                 bulletActive[i] = false;
-                                smallAsteroidSpawned[k] = false;
+                                smallAsteroid[k].active = false;
                             }
                         }
                     }
@@ -291,13 +289,13 @@ int main(void)
             if(!gameOver)
             {
                 for(int i = 0;
-                    i < MAX_ASTEROIDS;
+                    i < MAX_LARGE_ASTEROIDS;
                     i++)
                 {
-                    if(asteroidSpawned[i])
+                    if(largeAsteroid[i].active)
                     {
-                        float distance = Vector2Distance(asteroidPos[i], shipPosition);
-                        if(distance < (asteroidScale[i] + shipSize))
+                        float distance = Vector2Distance(largeAsteroid[i].pos, shipPosition);
+                        if(distance < (largeAsteroid[i].size + shipSize))
                         {
                             gameOver = true;
                             break;
@@ -308,10 +306,10 @@ int main(void)
                     j < MAX_SMALL_ASTEROIDS;
                     j++)
                 {
-                    if(smallAsteroidSpawned[j])
+                    if(smallAsteroid[j].active)
                     {
-                        float distance = Vector2Distance(smallAsteroidPos[j], shipPosition);
-                        if(distance < (smallAsteroidScale[j] + shipSize))
+                        float distance = Vector2Distance(smallAsteroid[j].pos, shipPosition);
+                        if(distance < (smallAsteroid[j].size + shipSize))
                         {
                             gameOver = true;
                             break;
@@ -375,12 +373,12 @@ int main(void)
             
             // Draw asteroids
             for(int i = 0;
-                i < MAX_ASTEROIDS;
+                i < MAX_LARGE_ASTEROIDS;
                 i++)
             {
-                if(asteroidSpawned[i])
+                if(largeAsteroid[i].active)
                 {
-                    DrawCircleV(asteroidPos[i], asteroidScale[i], GRAY);
+                    DrawCircleV(largeAsteroid[i].pos, largeAsteroid[i].size, GRAY);
                 }
             }
             
@@ -389,9 +387,9 @@ int main(void)
                 i < MAX_SMALL_ASTEROIDS;
                 i++)
             {
-                if(smallAsteroidSpawned[i])
+                if(smallAsteroid[i].active)
                 {
-                    DrawCircleV(smallAsteroidPos[i], smallAsteroidScale[i], GRAY);
+                    DrawCircleV(smallAsteroid[i].pos, smallAsteroid[i].size, GRAY);
                 }
             }
             
@@ -425,24 +423,21 @@ spawnSmallAsteroid(Vector2 asteroidPos, Vector2 asteroidVelocity, Vector2 astero
         i < MAX_SMALL_ASTEROIDS;
         i++)
     {
-        if(!smallAsteroidSpawned[i])
+        if(!smallAsteroid[i].active)
         {
-            float angle = GetRandomValue(0, 360);
-            float spawnRadius = screenRadius + spawnMargin;
+            smallAsteroid[i].pos.x = asteroidPos.x;
+            smallAsteroid[i].pos.y = asteroidPos.y;
             
-            smallAsteroidPos[i].x = asteroidPos.x;
-            smallAsteroidPos[i].y = asteroidPos.y;
-            
-            smallAsteroidScale[i] = GetRandomValue(5, 10);
-            smallAsteroidSpawned[i] = true;
+            smallAsteroid[i].size = GetRandomValue(5, 10);
+            smallAsteroid[i].active = true;
             
             // Add some spread
             float spread = GetRandomValue(-40, 40) * DEG2RAD;
             
-            smallAsteroidDirection[i].x = asteroidDirection.x * cosf(spread) - asteroidDirection.y * sinf(spread);
-            smallAsteroidDirection[i].x = asteroidDirection.y * sinf(spread) + asteroidDirection.y * cosf(spread);
+            smallAsteroid[i].direction.x = asteroidDirection.x * cosf(spread) - asteroidDirection.y * sinf(spread);
+            smallAsteroid[i].direction.y = asteroidDirection.x * sinf(spread) + asteroidDirection.y * cosf(spread);
             
-            smallAsteroidVelocity[i] = Vector2Scale(smallAsteroidDirection[i], asteroidSpeed);
+            smallAsteroid[i].velocity = Vector2Scale(smallAsteroid[i].direction, asteroidSpeed);
             
             // Only spawn one small asteroid
             break;
