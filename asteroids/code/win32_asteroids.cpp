@@ -21,6 +21,17 @@ Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
 // Implement difficulty where every 10 seconds 0.2f gets added
 float asteroidSpeedMultiplier = 1.0f;
 
+// size of bullet
+float bulletRadius = 3.0f;
+float bulletSpeed = 10.0f;
+
+typedef struct
+{
+    Vector2 pos;
+    Vector2 velocity;
+    bool active;
+} Bullet;
+
 typedef struct
 {
     Vector2 pos;
@@ -59,13 +70,7 @@ int main(void)
     float shipRotation = 0.0f;
     float shipSize = 15.0f;
     
-    // Bullet
-    Vector2 bulletPosition[MAX_BULLETS];
-    Vector2 bulletVelocity[MAX_BULLETS];
-    bool bulletActive[MAX_BULLETS];
-    float bulletRadius = 3.0f;
-    float bulletSpeed = 10.0f;
-    
+    Bullet bullet[MAX_BULLETS];
     Asteroid largeAsteroid[MAX_LARGE_ASTEROIDS];
     Asteroid smallAsteroid[MAX_SMALL_ASTEROIDS];
     
@@ -74,7 +79,7 @@ int main(void)
         i < MAX_BULLETS;
         i++)
     {
-        bulletActive[i] = false;
+        bullet[i].active = false;
     }
     
     // Initialize asteroids
@@ -126,12 +131,12 @@ int main(void)
                     i < MAX_BULLETS;
                     i++)
                 {
-                    if(!bulletActive[i])
+                    if(!bullet[i].active)
                     {
-                        bulletActive[i] = true;
-                        bulletPosition[i] = shipPosition;
-                        bulletVelocity[i].x = sinf(shipRotation) * bulletSpeed;
-                        bulletVelocity[i].y = -cosf(shipRotation) * bulletSpeed;
+                        bullet[i].active = true;
+                        bullet[i].pos = shipPosition;
+                        bullet[i].velocity.x = sinf(shipRotation) * bulletSpeed;
+                        bullet[i].velocity.y = -cosf(shipRotation) * bulletSpeed;
                         break;
                     }
                 }
@@ -157,16 +162,16 @@ int main(void)
                 i < MAX_BULLETS;
                 i++)
             {
-                if(bulletActive[i])
+                if(bullet[i].active)
                 {
-                    bulletPosition[i].x += bulletVelocity[i].x;
-                    bulletPosition[i].y += bulletVelocity[i].y;
+                    bullet[i].pos.x += bullet[i].velocity.x;
+                    bullet[i].pos.y += bullet[i].velocity.y;
                     
                     // Deactive if off screen
-                    if(bulletPosition[i].x < 0 || bulletPosition[i].x > screenWidth ||
-                       bulletPosition[i].y < 0 || bulletPosition[i].y > screenHeight)
+                    if(bullet[i].pos.x < 0 || bullet[i].pos.x > screenWidth ||
+                       bullet[i].pos.y < 0 || bullet[i].pos.y > screenHeight)
                     {
-                        bulletActive[i] = false;
+                        bullet[i].active = false;
                     }
                 }
             }
@@ -246,7 +251,7 @@ int main(void)
                 i < MAX_BULLETS;
                 i++)
             {
-                if(bulletActive[i])
+                if(bullet[i].active)
                 {
                     for(int j = 0;
                         j < MAX_LARGE_ASTEROIDS;
@@ -254,11 +259,11 @@ int main(void)
                     {
                         if(largeAsteroid[j].active)
                         {
-                            float distance = Vector2Distance(bulletPosition[i], largeAsteroid[j].pos);
+                            float distance = Vector2Distance(bullet[i].pos, largeAsteroid[j].pos);
                             
                             if(distance < (largeAsteroid[j].size + bulletRadius))
                             {
-                                bulletActive[i] = false;
+                                bullet[i].active = false;
                                 largeAsteroid[j].active = false;
                                 
                                 // Spawn 2 small asteroids
@@ -273,11 +278,11 @@ int main(void)
                     {
                         if(smallAsteroid[k].active)
                         {
-                            float distance = Vector2Distance(bulletPosition[i], smallAsteroid[k].pos);
+                            float distance = Vector2Distance(bullet[i].pos, smallAsteroid[k].pos);
                             
                             if(distance < (smallAsteroid[k].size + bulletRadius))
                             {
-                                bulletActive[i] = false;
+                                bullet[i].active = false;
                                 smallAsteroid[k].active = false;
                             }
                         }
@@ -365,9 +370,9 @@ int main(void)
                 i < MAX_BULLETS;
                 i++)
             {
-                if(bulletActive[i])
+                if(bullet[i].active)
                 {
-                    DrawCircleV(bulletPosition[i], 3.0f, RED);
+                    DrawCircleV(bullet[i].pos, 3.0f, RED);
                 }
             }
             
