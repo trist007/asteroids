@@ -21,8 +21,6 @@ Vector2 asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
 // Implement difficulty where every 10 seconds 0.2f gets added
 float asteroidSpeedMultiplier = 1.0f;
 
-void spawnSmallAsteroid(Vector2 asteroidPos, Vector2 asteroidVelocity, Vector2 asteroidDirection);
-
 typedef struct
 {
     Vector2 pos;
@@ -32,8 +30,7 @@ typedef struct
     bool active;
 } Asteroid;
 
-Asteroid largeAsteroid[MAX_LARGE_ASTEROIDS];
-Asteroid smallAsteroid[MAX_SMALL_ASTEROIDS];
+void spawnSmallAsteroid(Asteroid *smallAsteroids, Vector2 asteroidPos, Vector2 asteroidVelocity, Vector2 asteroidDirection);
 
 // Program main entry point
 int main(void)
@@ -68,6 +65,9 @@ int main(void)
     bool bulletActive[MAX_BULLETS];
     float bulletRadius = 3.0f;
     float bulletSpeed = 10.0f;
+    
+    Asteroid largeAsteroid[MAX_LARGE_ASTEROIDS];
+    Asteroid smallAsteroid[MAX_SMALL_ASTEROIDS];
     
     // Initialize bullets
     for(int i = 0;
@@ -262,8 +262,8 @@ int main(void)
                                 largeAsteroid[j].active = false;
                                 
                                 // Spawn 2 small asteroids
-                                spawnSmallAsteroid(largeAsteroid[j].pos, largeAsteroid[j].velocity, largeAsteroid[j].direction);
-                                spawnSmallAsteroid(largeAsteroid[j].pos, largeAsteroid[j].velocity, largeAsteroid[j].direction);
+                                spawnSmallAsteroid(smallAsteroid, largeAsteroid[j].pos, largeAsteroid[j].velocity, largeAsteroid[j].direction);
+                                spawnSmallAsteroid(smallAsteroid, largeAsteroid[j].pos, largeAsteroid[j].velocity, largeAsteroid[j].direction);
                             }
                         }
                     }
@@ -417,7 +417,7 @@ int main(void)
 }
 
 void
-spawnSmallAsteroid(Vector2 asteroidPos, Vector2 asteroidVelocity, Vector2 asteroidDirection)
+spawnSmallAsteroid(Asteroid *smallAsteroid, Vector2 asteroidPos, Vector2 asteroidVelocity, Vector2 asteroidDirection)
 {
     for(int i = 0;
         i < MAX_SMALL_ASTEROIDS;
