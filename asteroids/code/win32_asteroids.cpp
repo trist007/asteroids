@@ -2,7 +2,7 @@
 #define NOUSER
 #define WIN32_LEAN_AND_MEAN
 #include <windows.h>
-#include <stdint.h>
+//#include <stdint.h>
 #include "raylib.h"
 #include "raymath.h"
 
@@ -27,7 +27,8 @@ float spawnMargin = 50.0f;
 
 typedef struct
 {
-    uint8_t *base;
+    //uint8_t *base;
+    unsigned char *base;
     size_t size;
     size_t used;
 } Arena;
@@ -90,7 +91,8 @@ typedef struct
     
 } GameState;
 
-// Forward declarations / prototypes
+// Forward declarations / Function prototypes
+GameState *initializeGame(Arena *arena);
 void spawnSmallAsteroid(GameState *gs, Vector2 asteroidPos, Vector2 asteroidVelocity, Vector2 asteroidDirection);
 void *arena_alloc(Arena *a, size_t bytes);
 
@@ -103,54 +105,12 @@ int main(void)
     
     void *memory = VirtualAlloc(NULL, MEGABYTES(64), MEM_COMMIT | MEM_RESERVE ,PAGE_READWRITE);
     Arena arena;
-    arena.base = (uint8_t *)memory;
+    arena.base = (unsigned char *)memory;
     arena.size = MEGABYTES(64);
     arena.used = 0;
     
     // Initialize game_state
-    GameState *gs = arena_push(&arena, GameState);
-    
-    // NOTE(trist007): VirtualAlloc zeros out memory
-    gs->gameOver = false;
-    gs->speedIncreaseInterval = 10.0f;
-    gs->asteroidSpawnInterval = 1.0f;
-    
-    gs->asteroidSpeed = 2.0f;
-    gs->asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
-    gs->asteroidSpeedMultiplier = 1.0f;
-    gs->bulletRadius = 3.0f;
-    gs->bulletSpeed = 10.0f;
-    
-    // Initialize ship
-    gs->ship.pos = { (float)screenWidth / 2, (float)screenHeight / 2 };
-    gs->ship.thrust = 0.1f;
-    gs->ship.friction = 0.99f; // 1.0 for no friction, lower = more friction
-    gs->ship.color = DARKBLUE;
-    gs->ship.size = 15.0f;
-    
-    // Initialize bullets
-    for(int i = 0;
-        i < MAX_BULLETS;
-        i++)
-    {
-        gs->bullet[i].active = false;
-    }
-    
-    // Initialize asteroids
-    for(int i = 0;
-        i < MAX_LARGE_ASTEROIDS;
-        i++)
-    {
-        gs->largeAsteroid[i].active = false;
-    }
-    
-    // Initialize small asteroids
-    for(int i = 0;
-        i < MAX_SMALL_ASTEROIDS;
-        i++)
-    {
-        gs->smallAsteroid[i].active = false;
-    }
+    GameState *gs = initializeGame(&arena);
     
     // Main game loop
     while(!WindowShouldClose())
@@ -459,10 +419,20 @@ int main(void)
         
         if(gs->gameOver)
         {
+            if(IsKeyPressed(KEY_R))
+            {
+                gs = initializeGame(&arena);
+            }
+            
             int fontSize = 80;
-            char *text = "GAME OVER";
+            int fontSize2 = 50;
+            const char *text = "GAME OVER";
+            const char *text2 = "hit R to restart";
             int textWidth = MeasureText(text, fontSize);
             DrawText(text, screenWidth / 2 - textWidth / 2, screenHeight / 2 - fontSize / 2, fontSize, RED);
+            DrawText(text2, screenWidth / 2 - textWidth / 2, (screenHeight / 2 - fontSize / 2) + 75, fontSize2, RED);
+            
+            
         }
         
         EndDrawing();
@@ -473,6 +443,58 @@ int main(void)
     CloseWindow();
     
     return(0);
+}
+
+GameState *
+initializeGame(Arena *arena)
+{
+    arena->used = 0;
+    GameState *gs = arena_push(arena, GameState);
+    
+    gs->gameOver = false;
+    gs->speedIncreaseInterval = 10.0f;
+    gs->asteroidSpawnInterval = 1.0f;
+    
+    gs->asteroidSpeed = 2.0f;
+    gs->asteroidTarget = { screenWidth / 2.0f, screenHeight / 2.0f };
+    gs->asteroidSpeedMultiplier = 1.0f;
+    gs->bulletRadius = 3.0f;
+    gs->bulletSpeed = 10.0f;
+    
+    // Initialize ship
+    gs->ship.pos = { (float)screenWidth / 2, (float)screenHeight / 2 };
+    gs->ship.velocity = {};
+    gs->ship.rotation = 0.0f;
+    gs->ship.thrust = 0.1f;
+    gs->ship.friction = 0.99f; // 1.0 for no friction, lower = more friction
+    gs->ship.color = DARKBLUE;
+    gs->ship.size = 15.0f;
+    
+    // Initialize bullets
+    for(int i = 0;
+        i < MAX_BULLETS;
+        i++)
+    {
+        gs->bullet[i].active = false;
+    }
+    
+    // Initialize asteroids
+    for(int i = 0;
+        i < MAX_LARGE_ASTEROIDS;
+        i++)
+    {
+        gs->largeAsteroid[i].active = false;
+    }
+    
+    // Initialize small asteroids
+    for(int i = 0;
+        i < MAX_SMALL_ASTEROIDS;
+        i++)
+    {
+        gs->smallAsteroid[i].active = false;
+    }
+    
+    return(gs);
 }
 
 void
