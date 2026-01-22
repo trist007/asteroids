@@ -29,6 +29,17 @@ typedef struct
 {
     Vector2 pos;
     Vector2 velocity;
+    Color color;
+    float thrust;
+    float friction;
+    float rotation;
+    float size;
+} Ship;
+
+typedef struct
+{
+    Vector2 pos;
+    Vector2 velocity;
     bool active;
 } Bullet;
 
@@ -61,18 +72,19 @@ int main(void)
     float asteroidSpawnTimer = 0.0f;
     float asteroidSpawnInterval = 1.0f;
     
-    // Player ship
-    Vector2 shipPosition = { (float)screenWidth/2, (float)screenHeight/2 };
-    Vector2 shipVelocity = { 0.0f, 0.0f };
-    float thrust = 0.1f;
-    float friction = 0.99f; // 1.0 for no friction, lower = more friction
-    Color shipColor = DARKBLUE;
-    float shipRotation = 0.0f;
-    float shipSize = 15.0f;
-    
+    Ship ship;
     Bullet bullet[MAX_BULLETS];
     Asteroid largeAsteroid[MAX_LARGE_ASTEROIDS];
     Asteroid smallAsteroid[MAX_SMALL_ASTEROIDS];
+    
+    // Initialize ship
+    ship.pos = { (float) screenWidth / 2, (float) screenHeight / 2 };
+    ship.velocity = { 0.0f, 0.0f };
+    ship.thrust = 0.1f;
+    ship.friction = 0.99f; // 1.0 for no friction, lower = more friction
+    ship.color = DARKBLUE;
+    ship.rotation = 0.0f;
+    ship.size = 15.0f;
     
     // Initialize bullets
     for(int i = 0;
@@ -113,17 +125,17 @@ int main(void)
             }
             
             // Control ship with keyboard
-            if(IsKeyDown(KEY_RIGHT)) shipRotation += 0.05f;
-            if(IsKeyDown(KEY_LEFT)) shipRotation -= 0.05f;
+            if(IsKeyDown(KEY_RIGHT)) ship.rotation += 0.05f;
+            if(IsKeyDown(KEY_LEFT)) ship.rotation -= 0.05f;
             if(IsKeyDown(KEY_UP))
             {
-                shipVelocity.x += sinf(shipRotation) * thrust;
-                shipVelocity.y -= cosf(shipRotation) * thrust;
+                ship.velocity.x += sinf(ship.rotation) * ship.thrust;
+                ship.velocity.y -= cosf(ship.rotation) * ship.thrust;
             }
             if(IsKeyDown(KEY_DOWN))
             {
-                shipVelocity.x -= sinf(shipRotation) * thrust;
-                shipVelocity.y += cosf(shipRotation) * thrust;
+                ship.velocity.x -= sinf(ship.rotation) * ship.thrust;
+                ship.velocity.y += cosf(ship.rotation) * ship.thrust;
             }
             if(IsKeyPressed(KEY_SPACE))
             {
@@ -134,9 +146,9 @@ int main(void)
                     if(!bullet[i].active)
                     {
                         bullet[i].active = true;
-                        bullet[i].pos = shipPosition;
-                        bullet[i].velocity.x = sinf(shipRotation) * bulletSpeed;
-                        bullet[i].velocity.y = -cosf(shipRotation) * bulletSpeed;
+                        bullet[i].pos = ship.pos;
+                        bullet[i].velocity.x = sinf(ship.rotation) * bulletSpeed;
+                        bullet[i].velocity.y = -cosf(ship.rotation) * bulletSpeed;
                         break;
                     }
                 }
@@ -151,11 +163,11 @@ int main(void)
             }
             
             // Apply velocity and friction to shipPosition
-            shipPosition.x += shipVelocity.x;
-            shipPosition.y += shipVelocity.y;
+            ship.pos.x += ship.velocity.x;
+            ship.pos.y += ship.velocity.y;
             
-            shipVelocity.x *= friction;
-            shipVelocity.y *= friction;
+            ship.velocity.x *= ship.friction;
+            ship.velocity.y *= ship.friction;
             
             // Update active bullets
             for(int i = 0;
@@ -299,8 +311,8 @@ int main(void)
                 {
                     if(largeAsteroid[i].active)
                     {
-                        float distance = Vector2Distance(largeAsteroid[i].pos, shipPosition);
-                        if(distance < (largeAsteroid[i].size + shipSize))
+                        float distance = Vector2Distance(largeAsteroid[i].pos, ship.pos);
+                        if(distance < (largeAsteroid[i].size + ship.size))
                         {
                             gameOver = true;
                             break;
@@ -313,8 +325,8 @@ int main(void)
                 {
                     if(smallAsteroid[j].active)
                     {
-                        float distance = Vector2Distance(smallAsteroid[j].pos, shipPosition);
-                        if(distance < (smallAsteroid[j].size + shipSize))
+                        float distance = Vector2Distance(smallAsteroid[j].pos, ship.pos);
+                        if(distance < (smallAsteroid[j].size + ship.size))
                         {
                             gameOver = true;
                             break;
@@ -326,16 +338,16 @@ int main(void)
             // Check if player ship has gone offscreen only to wrap on the opposite end
             // NOTE(trist007): if the ship moves very fast it can do multiple
             // wraps so you can use the crossedOver bool
-            if(shipPosition.x < 0 || shipPosition.x > screenWidth ||
-               shipPosition.y < 0 || shipPosition.y > screenHeight)
+            if(ship.pos.x < 0 || ship.pos.x > screenWidth ||
+               ship.pos.y < 0 || ship.pos.y > screenHeight)
             {
                 // Wrap horizontally
-                if(shipPosition.x < 0) shipPosition.x = screenWidth;
-                if(shipPosition.x > screenWidth) shipPosition.x = 0;
+                if(ship.pos.x < 0) ship.pos.x = screenWidth;
+                if(ship.pos.x > screenWidth) ship.pos.x = 0;
                 
                 // Wrap veritcally
-                if(shipPosition.y < 0) shipPosition.y = screenHeight;
-                if(shipPosition.y > screenHeight) shipPosition.y = 0;
+                if(ship.pos.y < 0) ship.pos.y = screenHeight;
+                if(ship.pos.y > screenHeight) ship.pos.y = 0;
             }
         }
         
@@ -348,21 +360,21 @@ int main(void)
             ClearBackground(RAYWHITE);
             
             Vector2 v1 = {
-                shipPosition.x + sinf(shipRotation) * shipSize,
-                shipPosition.y - cosf(shipRotation) * shipSize
+                ship.pos.x + sinf(ship.rotation) * ship.size,
+                ship.pos.y - cosf(ship.rotation) * ship.size
             };
             
             Vector2 v2 = {
-                shipPosition.x + sinf(shipRotation + 2.4f) * shipSize,
-                shipPosition.y - cosf(shipRotation + 2.4f) * shipSize
+                ship.pos.x + sinf(ship.rotation + 2.4f) * ship.size,
+                ship.pos.y - cosf(ship.rotation + 2.4f) * ship.size
             };
             
             Vector2 v3 = {
-                shipPosition.x + sinf(shipRotation - 2.4f) * shipSize,
-                shipPosition.y - cosf(shipRotation - 2.4f) * shipSize
+                ship.pos.x + sinf(ship.rotation - 2.4f) * ship.size,
+                ship.pos.y - cosf(ship.rotation - 2.4f) * ship.size
             };
             
-            DrawTriangle(v1, v3, v2, shipColor);
+            DrawTriangle(v1, v3, v2, ship.color);
             DrawTriangleLines(v1, v3, v2, BLACK);
             
             // Draw bullets
